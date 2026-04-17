@@ -34,6 +34,42 @@
         grid-template-rows: repeat(15, 50px);
         border: 2px solid #444;
       }
+      .first-screen {
+        width: 750px;
+        height: 750px;
+        border: 2px solid #44ff44;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+      }
+      .first-screen h1 {
+        color: #44ff44;
+        font-size: 36px;
+        margin: 0 0 8px;
+      }
+      .first-screen p {
+        color: #aaa;
+        font-size: 14px;
+        margin: 0;
+      }
+      .first-screen button {
+        margin-top: 24px;
+        padding: 12px 40px;
+        background: transparent;
+        color: #44ff44;
+        border: 2px solid #44ff44;
+        font-family: monospace;
+        font-size: 16px;
+        cursor: pointer;
+        letter-spacing: 2px;
+        transition: background 0.15s, color 0.15s;
+      }
+      .first-screen button:hover {
+        background: #44ff44;
+        color: #111;
+      }
       .game-over-screen {
         width: 750px;
         height: 750px;
@@ -122,6 +158,7 @@
         const [food, setFood] = React.useState(() => randomPos(INITIAL_SNAKE))
         const [score, setScore] = React.useState(0)
         const [gameOver, setGameOver] = React.useState(false)
+        const [firstScreen, setFirstScreen] = React.useState(true)
         const [deathReason, setDeathReason] = React.useState('')
         const [dying, setDying] = React.useState(false)
 
@@ -134,6 +171,7 @@
           setScore(0)
           setDirection('ArrowRight')
           setGameOver(false)
+          setFirstScreen(true)
           setDeathReason('')
           setDying(false)
         }
@@ -157,7 +195,7 @@
         }, [])
 
         React.useEffect(() => {
-          if (gameOver || dying) return
+          if (gameOver || dying || firstScreen) return
 
           const i = setInterval(() => {
             setSnake((oldSnake) => {
@@ -200,7 +238,20 @@
             })
           }, 200)
           return () => clearInterval(i)
-        }, [direction, gameOver, dying])
+        }, [direction, gameOver, dying, firstScreen])
+
+        if (firstScreen) {
+          return (
+            <div className="first-screen">
+              <h1>SNAKE GAME</h1>
+              <p>Usa las flechas o WASD para moverte</p>
+              <p>Presiona R para reiniciar en cualquier momento</p>
+              <p>¡Come la manzana para crecer y aumentar tu puntuación!</p>
+              <p>¡Evita chocar con las paredes o contigo mismo!</p>
+              <button onClick={() => setFirstScreen(false)}>JUGAR</button>
+            </div>
+          )
+        }
 
         if (gameOver) {
           return (
