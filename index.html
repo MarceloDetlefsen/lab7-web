@@ -35,6 +35,26 @@
         border: 2px solid #444;
         cursor: pointer;
       }
+      .game-over-screen {
+        width: 750px;
+        height: 750px;
+        border: 2px solid #ff4444;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+      }
+      .game-over-screen h1 {
+        color: #ff4444;
+        font-size: 36px;
+        margin: 0;
+      }
+      .game-over-screen p {
+        color: #aaa;
+        font-size: 14px;
+        margin: 0;
+      }
     </style>
 
     <div id="root"></div>
@@ -42,6 +62,12 @@
     <script type="text/babel">
       const root = document.getElementById("root");
       const reactRoot = ReactDOM.createRoot(root);
+
+      const INITIAL_SNAKE = [
+        { x: 7, y: 8 },
+        { x: 6, y: 8 },
+        { x: 5, y: 8 }
+      ]
 
       const Segment = ({ x, y }) => {
         const style = {
@@ -62,55 +88,77 @@
       const Game = () => {
         const [direction, setDirection] = React.useState('ArrowRight')
         const [length, setLength] = React.useState(3)
-        const [snake, setSnake] = React.useState([
-          { x: 7, y: 8 },
-          { x: 6, y: 8 },
-          { x: 5, y: 8 }
-        ])
+        const [snake, setSnake] = React.useState(INITIAL_SNAKE)
+        const [gameOver, setGameOver] = React.useState(false)
+
+        const reset = () => {
+          setSnake(INITIAL_SNAKE)
+          setLength(3)
+          setDirection('ArrowRight')
+          setGameOver(false)
+        }
 
         React.useEffect(() => {
           const onClick = () => {
-            setLength((prevLength) => prevLength + 1)
+            if (!gameOver) setLength((prevLength) => prevLength + 1)
           }
           window.addEventListener('click', onClick)
           return () => window.removeEventListener('click', onClick)
-        }, [])
+        }, [gameOver])
 
         React.useEffect(() => {
           const handleKeyDown = (e) => {
-            if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-              setDirection(e.key)
+            // Restart
+            if (e.key === 'r' || e.key === 'R') {
+              reset()
+              return
             }
+            // Direcciones — arrows y WASD
+            const map = {
+              'ArrowRight': 'ArrowRight', 'd': 'ArrowRight', 'D': 'ArrowRight',
+              'ArrowLeft':  'ArrowLeft',  'a': 'ArrowLeft',  'A': 'ArrowLeft',
+              'ArrowUp':    'ArrowUp',    'w': 'ArrowUp',    'W': 'ArrowUp',
+              'ArrowDown':  'ArrowDown',  's': 'ArrowDown',  'S': 'ArrowDown',
+            }
+            if (map[e.key]) setDirection(map[e.key])
           }
           window.addEventListener('keydown', handleKeyDown)
           return () => window.removeEventListener('keydown', handleKeyDown)
         }, [])
 
         React.useEffect(() => {
+          if (gameOver) return
+
           const i = setInterval(() => {
             setSnake((oldSnake) => {
               const newHead = { ...oldSnake[0] }
               switch (direction) {
-                case 'ArrowRight':
-                  newHead.x = newHead.x + 1
-                  break;
-                case 'ArrowLeft':
-                  newHead.x = newHead.x - 1
-                  break;
-                case 'ArrowUp':
-                  newHead.y = newHead.y - 1
-                  break;
-                case 'ArrowDown':
-                  newHead.y = newHead.y + 1
-                  break;
+                case 'ArrowRight': newHead.x = newHead.x + 1; break;
+                case 'ArrowLeft':  newHead.x = newHead.x - 1; break;
+                case 'ArrowUp':    newHead.y = newHead.y - 1; break;
+                case 'ArrowDown':  newHead.y = newHead.y + 1; break;
               }
-              newHead.x = ((newHead.x - 1 + 15) % 15) + 1
-              newHead.y = ((newHead.y - 1 + 15) % 15) + 1
+
+              if (newHead.x < 1 || newHead.x > 15 || newHead.y < 1 || newHead.y > 15) {
+                setGameOver(true)
+                return oldSnake
+              }
+
               return [newHead, ...oldSnake.slice(0, length - 1)]
             })
           }, 200)
           return () => clearInterval(i)
-        }, [direction, length])
+        }, [direction, length, gameOver])
+
+        if (gameOver) {
+          return (
+            <div className="game-over-screen">
+              <h1>GAME OVER</h1>
+              <p>Chocaste con la pared</p>
+              <p>Presiona R para reiniciar</p>
+            </div>
+          )
+        }
 
         return (
           <>
