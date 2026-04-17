@@ -2,7 +2,7 @@
 
 Juego clásico de Snake implementado con React (vía CDN) y JSX en el navegador usando Babel, sin herramientas de build.
 
-## Screenshot
+## Screenshots
 
 ### Pantalla de Inicio
 ![Pantalla de inicio](images/menu.png)
@@ -40,6 +40,7 @@ Abrí `index.html` directamente en tu navegador.
 |--------|--------|
 | Moverse | `↑ ↓ ← →` o `W A S D` |
 | Reiniciar | `R` |
+| Pausar | 'P' |
 
 - Elegí una dificultad al inicio: **Fácil**, **Medio** o **Difícil**
 - Comé las 🍎 para crecer y sumar puntos
@@ -73,6 +74,7 @@ Abrí `index.html` directamente en tu navegador.
 | Pantalla de inicio | Instrucciones y selección de dificultad |
 | Pantalla de Game Over | Razón de muerte y puntaje final |
 | Reinicio | Tecla R en cualquier momento |
+| Pausa | Tecla P en cualquier momento |
 
 ## Detalles técnicos
 

@@ -199,6 +199,7 @@
         const [difficulty, setDifficulty] = React.useState(null)
         const [deathReason, setDeathReason] = React.useState('')
         const [dying, setDying] = React.useState(false)
+        const [pause, setPause] = React.useState(false)
 
         const foodRef = React.useRef(food)
         const bombRef = React.useRef(bomb)
@@ -221,6 +222,7 @@
           setDifficulty(null)
           setDeathReason('')
           setDying(false)
+          setPause(false)
         }
 
         React.useEffect(() => {
@@ -229,6 +231,13 @@
               reset()
               return
             }
+            if (e.key === 'p' || e.key === 'P') {
+              setPause(p => !p)
+              return
+            }
+
+            if (pause) return
+
             const map = {
               'ArrowRight': 'ArrowRight', 'd': 'ArrowRight', 'D': 'ArrowRight',
               'ArrowLeft':  'ArrowLeft',  'a': 'ArrowLeft',  'A': 'ArrowLeft',
@@ -239,10 +248,10 @@
           }
           window.addEventListener('keydown', handleKeyDown)
           return () => window.removeEventListener('keydown', handleKeyDown)
-        }, [])
+        }, [pause])
 
         React.useEffect(() => {
-          if (gameOver || dying || firstScreen || !difficulty) return
+          if (gameOver || dying || firstScreen || !difficulty || pause) return
 
           const speed = DIFFICULTY[difficulty].speed
 
@@ -300,7 +309,7 @@
             })
           }, speed)
           return () => clearInterval(i)
-        }, [direction, gameOver, dying, firstScreen, difficulty])
+        }, [direction, gameOver, dying, firstScreen, difficulty, pause])
 
         if (firstScreen) {
           return (
@@ -333,14 +342,36 @@
           <>
             <div className="info">
               <Score score={score} difficulty={difficulty} />
+              {pause && <span style={{ color: '#44ff44' }}>⏸ PAUSA</span>}
             </div>
-            <main className="board">
-              {snake.map((part, index) => (
-                <Segment key={index} x={part.x} y={part.y} isHead={index === 0} />
-              ))}
-              <Food x={food.x} y={food.y} />
-              {bomb && <Bomb x={bomb.x} y={bomb.y} />}
-            </main>
+            <div style={{ position: 'relative' }}>
+              <main className="board">
+                {snake.map((part, index) => (
+                  <Segment key={index} x={part.x} y={part.y} isHead={index === 0} />
+                ))}
+                <Food x={food.x} y={food.y} />
+                {bomb && <Bomb x={bomb.x} y={bomb.y} />}
+              </main>
+              
+              {pause && (
+                <div style={{
+                  position: 'absolute',
+                  top: 0, 
+                  left: 0,
+                  width: '750px',
+                  height: '750px',
+                  background: 'rgba(0,0,0,0.7)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexDirection: 'column',
+                  border: '2px solid #44ff44'
+                }}>
+                  <h1 style={{ color: '#44ff44', margin: 0 }}>PAUSA</h1>
+                  <p style={{ color: '#aaa' }}>Presiona P para continuar</p>
+                </div>
+              )}
+            </div>
           </>
         )
       }
