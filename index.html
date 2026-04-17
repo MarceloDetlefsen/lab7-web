@@ -69,6 +69,17 @@
         { x: 5, y: 8 }
       ]
 
+      const randomPos = (snake) => {
+        let pos
+        do {
+          pos = {
+            x: Math.floor(Math.random() * 15) + 1,
+            y: Math.floor(Math.random() * 15) + 1
+          }
+        } while (snake.some(seg => seg.x === pos.x && seg.y === pos.y))
+        return pos
+      }
+
       const Segment = ({ x, y, isHead }) => {
         const style = {
           width: "50px",
@@ -85,15 +96,36 @@
         return <div style={style} />
       }
 
+      const Food = ({ x, y }) => {
+        const style = {
+          width: "50px",
+          height: "50px",
+          background: "red",
+          boxSizing: "border-box",
+          border: "1px solid black",
+          gridColumn: x,
+          gridRow: y,
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "24px",
+          lineHeight: 1
+        }
+        return <div style={style}>🍎</div>
+      }
+
       const Game = () => {
         const [direction, setDirection] = React.useState('ArrowRight')
         const [snake, setSnake] = React.useState(INITIAL_SNAKE)
+        const [food, setFood] = React.useState(() => randomPos(INITIAL_SNAKE))
         const [gameOver, setGameOver] = React.useState(false)
         const [deathReason, setDeathReason] = React.useState('')
         const [dying, setDying] = React.useState(false)
 
         const reset = () => {
           setSnake(INITIAL_SNAKE)
+          setFood(randomPos(INITIAL_SNAKE))
           setDirection('ArrowRight')
           setGameOver(false)
           setDeathReason('')
@@ -103,7 +135,6 @@
         React.useEffect(() => {
           const onClick = () => {
             if (!gameOver && !dying) {
-              // Crece fisicamente de inmediato duplicando el ultimo segmento
               setSnake((oldSnake) => [...oldSnake, { ...oldSnake[oldSnake.length - 1] }])
             }
           }
@@ -142,14 +173,14 @@
                 case 'ArrowDown':  newHead.y = newHead.y + 1; break;
               }
 
-              // Colision con pared — inmediato
+              // Colision con pared
               if (newHead.x < 1 || newHead.x > 15 || newHead.y < 1 || newHead.y > 15) {
                 setDeathReason('Chocaste con la pared')
                 setGameOver(true)
                 return oldSnake
               }
 
-              // Colision con si misma — delay de 1s
+              // Colision con si misma
               const body = oldSnake.slice(0, oldSnake.length - 1)
               const hitSelf = body.some(seg => seg.x === newHead.x && seg.y === newHead.y)
               if (hitSelf) {
@@ -159,8 +190,19 @@
                 return oldSnake
               }
 
-              // Mover: nueva cabeza, se descarta el ultimo
-              return [newHead, ...oldSnake.slice(0, oldSnake.length - 1)]
+              // Comio la manzana
+              const newSnake = [newHead, ...oldSnake]
+              setFood((currentFood) => {
+                if (newHead.x === currentFood.x && newHead.y === currentFood.y) {
+                  // Crece (no se descarta el tail) y genera nueva comida
+                  return randomPos(newSnake)
+                }
+                // No comio, descarta el tail normalmente
+                newSnake.pop()
+                return currentFood
+              })
+
+              return newSnake
             })
           }, 200)
           return () => clearInterval(i)
@@ -183,6 +225,7 @@
               {snake.map((part, index) => (
                 <Segment key={index} x={part.x} y={part.y} isHead={index === 0} />
               ))}
+              <Food x={food.x} y={food.y} />
             </main>
           </>
         )
