@@ -33,7 +33,6 @@
         grid-template-columns: repeat(15, 50px);
         grid-template-rows: repeat(15, 50px);
         border: 2px solid #444;
-        cursor: pointer;
       }
       .game-over-screen {
         width: 750px;
@@ -55,6 +54,11 @@
         font-size: 14px;
         margin: 0;
       }
+      .game-over-screen .score {
+        color: white;
+        font-size: 22px;
+        margin: 8px 0;
+      }
     </style>
 
     <div id="root"></div>
@@ -63,11 +67,7 @@
       const root = document.getElementById("root");
       const reactRoot = ReactDOM.createRoot(root);
 
-      const INITIAL_SNAKE = [
-        { x: 7, y: 8 },
-        { x: 6, y: 8 },
-        { x: 5, y: 8 }
-      ]
+      const INITIAL_SNAKE = [{ x: 8, y: 8 }]
 
       const randomPos = (snake) => {
         let pos
@@ -100,12 +100,9 @@
         const style = {
           width: "50px",
           height: "50px",
-          background: "red",
           boxSizing: "border-box",
-          border: "1px solid black",
           gridColumn: x,
           gridRow: y,
-          borderRadius: "50%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -115,32 +112,31 @@
         return <div style={style}>🍎</div>
       }
 
+      const Score = ({ score }) => {
+        return <span>Puntaje: {score}</span>
+      }
+
       const Game = () => {
         const [direction, setDirection] = React.useState('ArrowRight')
         const [snake, setSnake] = React.useState(INITIAL_SNAKE)
         const [food, setFood] = React.useState(() => randomPos(INITIAL_SNAKE))
+        const [score, setScore] = React.useState(0)
         const [gameOver, setGameOver] = React.useState(false)
         const [deathReason, setDeathReason] = React.useState('')
         const [dying, setDying] = React.useState(false)
 
+        const foodRef = React.useRef(food)
+        React.useEffect(() => { foodRef.current = food }, [food])
+
         const reset = () => {
           setSnake(INITIAL_SNAKE)
           setFood(randomPos(INITIAL_SNAKE))
+          setScore(0)
           setDirection('ArrowRight')
           setGameOver(false)
           setDeathReason('')
           setDying(false)
         }
-
-        React.useEffect(() => {
-          const onClick = () => {
-            if (!gameOver && !dying) {
-              setSnake((oldSnake) => [...oldSnake, { ...oldSnake[oldSnake.length - 1] }])
-            }
-          }
-          window.addEventListener('click', onClick)
-          return () => window.removeEventListener('click', onClick)
-        }, [gameOver, dying])
 
         React.useEffect(() => {
           const handleKeyDown = (e) => {
@@ -191,16 +187,14 @@
               }
 
               // Comio la manzana
+              const currentFood = foodRef.current
               const newSnake = [newHead, ...oldSnake]
-              setFood((currentFood) => {
-                if (newHead.x === currentFood.x && newHead.y === currentFood.y) {
-                  // Crece (no se descarta el tail) y genera nueva comida
-                  return randomPos(newSnake)
-                }
-                // No comio, descarta el tail normalmente
+              if (newHead.x === currentFood.x && newHead.y === currentFood.y) {
+                setScore((s) => s + 1)
+                setFood(randomPos(newSnake))
+              } else {
                 newSnake.pop()
-                return currentFood
-              })
+              }
 
               return newSnake
             })
@@ -213,6 +207,7 @@
             <div className="game-over-screen">
               <h1>GAME OVER</h1>
               <p>{deathReason}</p>
+              <p className="score">Puntaje final: {score}</p>
               <p>Presiona R para reiniciar</p>
             </div>
           )
@@ -220,7 +215,9 @@
 
         return (
           <>
-            <div className="info">Longitud: {snake.length} — clic para crecer</div>
+            <div className="info">
+              <Score score={score} />
+            </div>
             <main className="board">
               {snake.map((part, index) => (
                 <Segment key={index} x={part.x} y={part.y} isHead={index === 0} />
