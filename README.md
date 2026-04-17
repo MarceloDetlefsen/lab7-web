@@ -40,7 +40,7 @@ Abrí `index.html` directamente en tu navegador.
 |--------|--------|
 | Moverse | `↑ ↓ ← →` o `W A S D` |
 | Reiniciar | `R` |
-| Pausar | 'P' |
+| Pausar | `P` |
 
 - Elegí una dificultad al inicio: **Fácil**, **Medio** o **Difícil**
 - Comé las 🍎 para crecer y sumar puntos
