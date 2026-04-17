@@ -4,22 +4,37 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Biblically Accurate Angels</title>
-
     <!-- React & ReactDOM CDN -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-
     <!-- Babel (to use JSX in browser) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   </head>
-
   <body>
     <style>
+      body {
+        margin: 0;
+        background: #111;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        font-family: monospace;
+        color: white;
+      }
+      .info {
+        margin-bottom: 10px;
+        font-size: 14px;
+        color: #aaa;
+      }
       .board {
         display: grid;
         grid-template-columns: repeat(15, 50px);
         grid-template-rows: repeat(15, 50px);
-      } 
+        border: 2px solid #444;
+        cursor: pointer;
+      }
     </style>
 
     <div id="root"></div>
@@ -29,7 +44,6 @@
       const reactRoot = ReactDOM.createRoot(root);
 
       const Segment = ({ x, y }) => {
-
         const style = {
           width: "50px",
           height: "50px",
@@ -39,17 +53,28 @@
           gridColumn: x,
           gridRow: y
         }
-
         React.useEffect(() => {
-            console.log(`Segment at x: ${x}, y: ${y} rendered`);
-          }, [x, y])
-
+          console.log(`Segment at x: ${x}, y: ${y} rendered`);
+        }, [x, y])
         return <div style={style} />
       }
 
       const Game = () => {
         const [direction, setDirection] = React.useState('ArrowRight')
-        const [pos, setPos] = React.useState({ x: 5, y: 8 })  
+        const [length, setLength] = React.useState(3)
+        const [snake, setSnake] = React.useState([
+          { x: 7, y: 8 },
+          { x: 6, y: 8 },
+          { x: 5, y: 8 }
+        ])
+
+        React.useEffect(() => {
+          const onClick = () => {
+            setLength((prevLength) => prevLength + 1)
+          }
+          window.addEventListener('click', onClick)
+          return () => window.removeEventListener('click', onClick)
+        }, [])
 
         React.useEffect(() => {
           const handleKeyDown = (e) => {
@@ -63,39 +88,46 @@
 
         React.useEffect(() => {
           const i = setInterval(() => {
-            setPos((oldPos) => {
-              let newPos = { x: null, y: null }
+            setSnake((oldSnake) => {
+              const newHead = { ...oldSnake[0] }
               switch (direction) {
                 case 'ArrowRight':
-                  newPos = { x: oldPos.x + 1, y: oldPos.y }
+                  newHead.x = newHead.x + 1
                   break;
                 case 'ArrowLeft':
-                  newPos = { x: oldPos.x - 1, y: oldPos.y }
+                  newHead.x = newHead.x - 1
                   break;
                 case 'ArrowUp':
-                  newPos = { x: oldPos.x, y: oldPos.y - 1 }
+                  newHead.y = newHead.y - 1
                   break;
                 case 'ArrowDown':
-                  newPos = { x: oldPos.x, y: oldPos.y + 1 }
+                  newHead.y = newHead.y + 1
                   break;
               }
-              return (newPos.y >= 1 && newPos.y <= 15) ? newPos : oldPos
+              newHead.x = ((newHead.x - 1 + 15) % 15) + 1
+              newHead.y = ((newHead.y - 1 + 15) % 15) + 1
+              return [newHead, ...oldSnake.slice(0, length - 1)]
             })
           }, 200)
           return () => clearInterval(i)
-        }, [direction])
+        }, [direction, length])
 
         return (
-          <main className = "board">
-            <Segment x={pos.x} y={pos.y } />
-          </main>
+          <>
+            <div className="info">Longitud: {length} — clic para crecer</div>
+            <main className="board">
+              {snake.map((part, index) => (
+                <Segment key={index} x={part.x} y={part.y} />
+              ))}
+            </main>
+          </>
         )
       }
 
-     const App = () => {
-       return (
-        <Game /> 
-       )
+      const App = () => {
+        return (
+          <Game />
+        )
       }
 
       reactRoot.render(<App />);
