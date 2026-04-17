@@ -27,6 +27,8 @@
         margin-bottom: 10px;
         font-size: 14px;
         color: #aaa;
+        display: flex;
+        gap: 24px;
       }
       .board {
         display: grid;
@@ -54,22 +56,26 @@
         font-size: 14px;
         margin: 0;
       }
-      .first-screen button {
+      .difficulty-buttons {
+        display: flex;
+        gap: 12px;
         margin-top: 24px;
-        padding: 12px 40px;
+      }
+      .diff-btn {
+        padding: 12px 28px;
         background: transparent;
-        color: #44ff44;
-        border: 2px solid #44ff44;
         font-family: monospace;
-        font-size: 16px;
+        font-size: 15px;
         cursor: pointer;
         letter-spacing: 2px;
         transition: background 0.15s, color 0.15s;
       }
-      .first-screen button:hover {
-        background: #44ff44;
-        color: #111;
-      }
+      .diff-btn.easy   { color: #44ff44; border: 2px solid #44ff44; }
+      .diff-btn.medium { color: #ffcc00; border: 2px solid #ffcc00; }
+      .diff-btn.hard   { color: #ff4444; border: 2px solid #ff4444; }
+      .diff-btn.easy:hover   { background: #44ff44; color: #111; }
+      .diff-btn.medium:hover { background: #ffcc00; color: #111; }
+      .diff-btn.hard:hover   { background: #ff4444; color: #111; }
       .game-over-screen {
         width: 750px;
         height: 750px;
@@ -105,14 +111,23 @@
 
       const INITIAL_SNAKE = [{ x: 8, y: 8 }]
 
-      const randomPos = (snake) => {
+      const DIFFICULTY = {
+        easy:   { speed: 250, label: 'FÁCIL',  color: '#44ff44' },
+        medium: { speed: 150, label: 'MEDIO',  color: '#ffcc00' },
+        hard:   { speed: 80,  label: 'DIFÍCIL', color: '#ff4444' },
+      }
+
+      const randomPos = (snake, exclude = []) => {
         let pos
         do {
           pos = {
             x: Math.floor(Math.random() * 15) + 1,
             y: Math.floor(Math.random() * 15) + 1
           }
-        } while (snake.some(seg => seg.x === pos.x && seg.y === pos.y))
+        } while (
+          snake.some(seg => seg.x === pos.x && seg.y === pos.y) ||
+          exclude.some(e => e.x === pos.x && e.y === pos.y)
+        )
         return pos
       }
 
@@ -148,30 +163,62 @@
         return <div style={style}>🍎</div>
       }
 
-      const Score = ({ score }) => {
-        return <span>Puntaje: {score}</span>
+      const Bomb = ({ x, y }) => {
+        const style = {
+          width: "50px",
+          height: "50px",
+          boxSizing: "border-box",
+          gridColumn: x,
+          gridRow: y,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "24px",
+          lineHeight: 1
+        }
+        return <div style={style}>💣</div>
+      }
+
+      const Score = ({ score, difficulty }) => {
+        const color = DIFFICULTY[difficulty].color
+        return (
+          <span>
+            Puntaje: {score} &nbsp;|&nbsp; <span style={{ color }}>{DIFFICULTY[difficulty].label}</span>
+          </span>
+        )
       }
 
       const Game = () => {
         const [direction, setDirection] = React.useState('ArrowRight')
         const [snake, setSnake] = React.useState(INITIAL_SNAKE)
         const [food, setFood] = React.useState(() => randomPos(INITIAL_SNAKE))
+        const [bomb, setBomb] = React.useState(null)
         const [score, setScore] = React.useState(0)
         const [gameOver, setGameOver] = React.useState(false)
         const [firstScreen, setFirstScreen] = React.useState(true)
+        const [difficulty, setDifficulty] = React.useState(null)
         const [deathReason, setDeathReason] = React.useState('')
         const [dying, setDying] = React.useState(false)
 
         const foodRef = React.useRef(food)
+        const bombRef = React.useRef(bomb)
         React.useEffect(() => { foodRef.current = food }, [food])
+        React.useEffect(() => { bombRef.current = bomb }, [bomb])
+
+        const startGame = (diff) => {
+          setDifficulty(diff)
+          setFirstScreen(false)
+        }
 
         const reset = () => {
           setSnake(INITIAL_SNAKE)
           setFood(randomPos(INITIAL_SNAKE))
+          setBomb(null)
           setScore(0)
           setDirection('ArrowRight')
           setGameOver(false)
           setFirstScreen(true)
+          setDifficulty(null)
           setDeathReason('')
           setDying(false)
         }
@@ -195,7 +242,9 @@
         }, [])
 
         React.useEffect(() => {
-          if (gameOver || dying || firstScreen) return
+          if (gameOver || dying || firstScreen || !difficulty) return
+
+          const speed = DIFFICULTY[difficulty].speed
 
           const i = setInterval(() => {
             setSnake((oldSnake) => {
@@ -224,31 +273,47 @@
                 return oldSnake
               }
 
+              // Colision con bomba
+              const currentBomb = bombRef.current
+              if (currentBomb && newHead.x === currentBomb.x && newHead.y === currentBomb.y) {
+                setDeathReason('Pisaste una bomba 💣')
+                setDying(true)
+                setTimeout(() => setGameOver(true), 1000)
+                return oldSnake
+              }
+
               // Comio la manzana
               const currentFood = foodRef.current
               const newSnake = [newHead, ...oldSnake]
               if (newHead.x === currentFood.x && newHead.y === currentFood.y) {
+                const newScore = score
                 setScore((s) => s + 1)
-                setFood(randomPos(newSnake))
+                // Nueva manzana y nueva bomba
+                const newFood = randomPos(newSnake, currentBomb ? [currentBomb] : [])
+                setFood(newFood)
+                setBomb(randomPos(newSnake, [newFood]))
               } else {
                 newSnake.pop()
               }
 
               return newSnake
             })
-          }, 200)
+          }, speed)
           return () => clearInterval(i)
-        }, [direction, gameOver, dying, firstScreen])
+        }, [direction, gameOver, dying, firstScreen, difficulty])
 
         if (firstScreen) {
           return (
             <div className="first-screen">
               <h1>SNAKE GAME</h1>
               <p>Usa las flechas o WASD para moverte</p>
+              <p>Come 🍎 para crecer — evita las 💣</p>
               <p>Presiona R para reiniciar en cualquier momento</p>
-              <p>¡Come la manzana para crecer y aumentar tu puntuación!</p>
-              <p>¡Evita chocar con las paredes o contigo mismo!</p>
-              <button onClick={() => setFirstScreen(false)}>JUGAR</button>
+              <div className="difficulty-buttons">
+                <button className="diff-btn easy"   onClick={() => startGame('easy')}>FÁCIL</button>
+                <button className="diff-btn medium" onClick={() => startGame('medium')}>MEDIO</button>
+                <button className="diff-btn hard"   onClick={() => startGame('hard')}>DIFÍCIL</button>
+              </div>
             </div>
           )
         }
@@ -267,13 +332,14 @@
         return (
           <>
             <div className="info">
-              <Score score={score} />
+              <Score score={score} difficulty={difficulty} />
             </div>
             <main className="board">
               {snake.map((part, index) => (
                 <Segment key={index} x={part.x} y={part.y} isHead={index === 0} />
               ))}
               <Food x={food.x} y={food.y} />
+              {bomb && <Bomb x={bomb.x} y={bomb.y} />}
             </main>
           </>
         )
