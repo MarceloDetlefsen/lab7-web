@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Biblically Accurate Angels</title>
+
+    <!-- React & ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Babel (to use JSX in browser) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+
+  <body>
+    <style>
+      .board {
+        display: grid;
+        grid-template-columns: repeat(15, 50px);
+        grid-template-rows: repeat(15, 50px);
+      } 
+    </style>
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const root = document.getElementById("root");
+      const reactRoot = ReactDOM.createRoot(root);
+
+      const Segment = ({ x, y }) => {
+
+        const style = {
+          width: "50px",
+          height: "50px",
+          background: "green",
+          boxSizing: "border-box",
+          border: "1px solid black",
+          gridColumn: x,
+          gridRow: y
+        }
+
+        React.useEffect(() => {
+            console.log(`Segment at x: ${x}, y: ${y} rendered`);
+          }, [x, y])
+
+        return <div style={style} />
+      }
+
+      const Game = () => {
+        const [direction, setDirection] = React.useState('ArrowRight')
+        const [pos, setPos] = React.useState({ x: 5, y: 8 })  
+
+        React.useEffect(() => {
+          const handleKeyDown = (e) => {
+            if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+              setDirection(e.key)
+            }
+          }
+          window.addEventListener('keydown', handleKeyDown)
+          return () => window.removeEventListener('keydown', handleKeyDown)
+        }, [])
+
+        React.useEffect(() => {
+          const i = setInterval(() => {
+            setPos((oldPos) => {
+              let newPos = { x: null, y: null }
+              switch (direction) {
+                case 'ArrowRight':
+                  newPos = { x: oldPos.x + 1, y: oldPos.y }
+                  break;
+                case 'ArrowLeft':
+                  newPos = { x: oldPos.x - 1, y: oldPos.y }
+                  break;
+                case 'ArrowUp':
+                  newPos = { x: oldPos.x, y: oldPos.y - 1 }
+                  break;
+                case 'ArrowDown':
+                  newPos = { x: oldPos.x, y: oldPos.y + 1 }
+                  break;
+              }
+              return (newPos.y >= 1 && newPos.y <= 15) ? newPos : oldPos
+            })
+          }, 200)
+          return () => clearInterval(i)
+        }, [direction])
+
+        return (
+          <main className = "board">
+            <Segment x={pos.x} y={pos.y } />
+          </main>
+        )
+      }
+
+     const App = () => {
+       return (
+        <Game /> 
+       )
+      }
+
+      reactRoot.render(<App />);
+    </script>
+  </body>
+</html>
